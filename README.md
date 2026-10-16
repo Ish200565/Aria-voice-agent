@@ -4,7 +4,7 @@ A browser-based voice agent for a fictional D2C skincare brand. Click **Start Ca
 
 - **Live app:** https://aria-aura-voice.netlify.app/ (use desktop **Chrome or Edge**, allow the microphone, headphones recommended)
 - **Backend API:** https://aria-voice-agent-105e.onrender.com
-- **Demo video:** `Link`
+- **Demo video:** `https://drive.google.com/drive/folders/1XMt1-Pq6Op4OXRtnZAhF9UBQjN78q2QH?usp=sharing` (Note: Video takes few seconds to start as it processess)
 - The backend runs on Render's free plan, so the first load can take up to a minute while it wakes up. The page shows "Waking up the server…" and enables **Start call** when it is ready.
 
 ## What Aria can do
