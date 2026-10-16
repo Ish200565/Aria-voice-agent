@@ -22,8 +22,7 @@ MAX_TURNS = int(os.getenv("MAX_TURNS", "20"))
 MAX_CALL_SECONDS = int(os.getenv("MAX_CALL_SECONDS", "300"))
 MAX_HISTORY_MESSAGES = int(os.getenv("MAX_HISTORY_MESSAGES", "16"))
 MAX_TOKENS = int(os.getenv("MAX_TOKENS", "150"))
-# gpt-oss models are reasoning models: reasoning tokens count against the completion cap, so give
-# them headroom (the prompt still forces 1-2 spoken sentences) and keep reasoning effort low for speed.
+# Reasoning tokens count against completion cap; keep effort low for response speed.
 REASONING_MAX_TOKENS = int(os.getenv("REASONING_MAX_TOKENS", "1000"))
 REASONING_EFFORT = os.getenv("REASONING_EFFORT", "low")
 MAX_TOOL_HOPS = 3

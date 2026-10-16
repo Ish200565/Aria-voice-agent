@@ -1,4 +1,4 @@
-"""Sentence splitter for streaming LLM tokens -> speakable chunks (drives low perceived latency)."""
+"""Sentence splitter for streaming LLM tokens -> speakable chunks."""
 import re
 
 _END = re.compile(r'([.!?]+["\')\]]*)(\s+)')

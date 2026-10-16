@@ -1,5 +1,4 @@
-"""Tools the LLM can call. ALL policy decisions are computed here in code, so the model only
-has to phrase results - it cannot 'agree' its way into a refund."""
+"""Tools available to the LLM for order lookups, returns, and cancellations."""
 import json
 import re
 import uuid
@@ -126,7 +125,7 @@ def cancel_order(orders: dict, order_id=None) -> dict:
     status = order["status"]
     oid = order["order_id"]
     if status == "Processing":
-        order["status"] = "Cancelled"          # mutates the SESSION copy only
+        order["status"] = "Cancelled"          # mutates the session copy only
         return {"success": True, "order_id": oid, "new_status": "Cancelled",
                 "message": "Order cancelled. Do not state refund timelines (not in policy)."}
     if status == "Cancelled":

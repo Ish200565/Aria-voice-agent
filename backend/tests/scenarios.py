@@ -18,7 +18,7 @@ import urllib.request
 DEFAULT_BASE = "https://aria-voice-agent-105e.onrender.com"
 
 
-# ---------- tiny API client (stdlib only) ----------
+# API client (stdlib only)
 def _post(base, path, payload, timeout=60):
     req = urllib.request.Request(base + path, data=json.dumps(payload).encode(),
                                  headers={"Content-Type": "application/json"}, method="POST")
@@ -49,7 +49,7 @@ def summary(base, sid):
     return json.load(_post(base, "/api/summary", {"session_id": sid}))["outcome"]
 
 
-# ---------- scenarios ----------
+# Scenarios
 # Each turn: (customer text, {"tools": [...must be called], "no_tools": [...must NOT be called],
 #             "match": regex that must match, "no_match": regex that must NOT match})
 DECLINE = r"sorry|unable|can.?t|cannot|not (eligible|possible|able)|only (accept|within)|window|outside"
@@ -69,7 +69,7 @@ SCENARIOS = [
         ("Cancel order ORD-101 please.", {"match": r"can.?t|cannot|unable|not possible|only|refuse|doorstep", "no_match": r"(has been|is now|successfully) cancel"})]),
     ("6 Return outside 7-day window (ORD-102)", [
         ("Can I return order ORD-102?", {"match": DECLINE, "no_match": NO_PROMISE})]),
-    ("7 PDF example: 20 days, opened", [
+    ("7 Return eligibility: 20 days, opened", [
         ("I bought this 20 days ago and have opened it. Can I return it?", {"match": DECLINE, "no_match": NO_PROMISE})]),
     ("8 Out of scope (flight to Goa)", [
         ("Can you book me a flight to Goa?", {"no_tools": ["get_order_details", "cancel_order"], "match": r"only help|aura skincare|skincare"})]),

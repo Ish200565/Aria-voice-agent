@@ -127,7 +127,7 @@ function ui(inCall){
   $("start").disabled = false;
 }
 
-/* ---------- warm-up (free server may be asleep) ---------- */
+// Server warm-up
 async function warmUp(){
   if(!SR) $("hint").textContent = "Voice input needs Chrome or Edge. Please open this page there.";
   for(;;){
@@ -149,7 +149,7 @@ async function loadOrders(){
       <div class="mute" style="text-align:left">${x.courier ? x.courier + " " + x.tracking_id + ". " : ""}${x.note}</div></div>`).join("");
   }catch{ $("orders").textContent = "Could not load the sample orders."; }
 }
-/* ---------- audio queue: sentences are fetched in parallel, played in order ---------- */
+// Audio queue: sentences fetched in parallel, played in order
 async function fetchAudio(text){
   if(USE_BROWSER_VOICE) return null;
   try{
@@ -198,7 +198,7 @@ function stopAudio(){
   if("speechSynthesis" in window) speechSynthesis.cancel();
 }
 
-/* ---------- listening (browser speech-to-text) ---------- */
+// Listening (browser speech-to-text)
 function stopRec(){ if(S.rec){ const r = S.rec; S.rec = null; try{ r.abort(); }catch{} } }
 function clearInterim(){ if(S.interimEl){ S.interimEl.remove(); S.interimEl = null; } }
 function listen(){
@@ -233,7 +233,7 @@ function listen(){
 }
 function maybeResume(){ if(!S.active) return; if(S.limit) endCall(); else listen(); }
 
-/* ---------- one conversational turn (SSE stream from the backend) ---------- */
+// Conversational turn (SSE stream from backend)
 async function sendTurn(text){
   const g = ++gen; S.streamDone = false; S.agentEl = null; S.rec = null; S.n = 0; S.rest = [];
   setState("thinking");
@@ -270,7 +270,7 @@ function onEvent(ev, g){
   }else if(ev.type === "limit") S.limit = true;
 }
 
-/* ---------- call lifecycle ---------- */
+// Call lifecycle
 async function startCall(){
   if(!SR) return toast("Please use Chrome or Edge.");
   try{ (await navigator.mediaDevices.getUserMedia({audio:true})).getTracks().forEach(t => t.stop()); }

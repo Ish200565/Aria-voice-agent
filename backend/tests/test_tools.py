@@ -34,7 +34,7 @@ def test_lookup_not_found_and_missing(orders):
     assert get_order_details(orders, None)["error"] == "missing_or_unreadable_order_id"
 
 
-def test_pdf_example_20_days_opened(orders):
+def test_return_20_days_opened(orders):
     r = check_return_eligibility(orders, days_since_delivery=20, product_opened=True)
     assert r["eligible"] is False and set(r["reasons"]) == {"outside_7_day_window", "opened_or_used"}
 

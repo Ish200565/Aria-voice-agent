@@ -1,4 +1,4 @@
-"""Text-mode test harness (Day 1 de-risking): python cli.py
+"""Text-mode test harness: python cli.py
 Chat with Aria in the terminal - same code path the browser uses, minus voice."""
 import asyncio
 

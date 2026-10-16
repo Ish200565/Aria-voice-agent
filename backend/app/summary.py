@@ -1,6 +1,4 @@
-"""Post-call outcome: one cheap LLM call (JSON mode) + deterministic facts from the tool log.
-The LLM only writes the prose/intent; order IDs, actions and escalation come from CODE, so a wrong
-guess by the model can never put a fake order ID or a fake action in the summary."""
+"""Post-call outcome generation using structured LLM output and deterministic tool logs."""
 import json
 import re
 

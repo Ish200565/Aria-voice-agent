@@ -18,7 +18,7 @@ app = FastAPI(title="Aria Voice Agent API")
 app.add_middleware(CORSMiddleware, allow_origins=config.ALLOWED_ORIGINS,
                    allow_methods=["*"], allow_headers=["*"])
 
-# --- tiny in-memory sliding-window rate limiter (protects the free LLM quota) ---
+# In-memory sliding-window rate limiter
 _hits: dict[tuple, deque] = defaultdict(deque)
 
 
@@ -39,7 +39,7 @@ def rate_limit(request: Request, bucket: str, limit: int, window: int):
 
 @app.api_route("/health", methods=["GET", "HEAD"])
 async def health():
-    """Ultra-light on purpose: used by the page warm-up and the UptimeRobot keep-alive ping."""
+    # used by warm-up and keep-alive pings
     return {"status": "ok"}
 
 

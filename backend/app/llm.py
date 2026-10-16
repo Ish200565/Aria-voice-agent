@@ -55,8 +55,7 @@ async def _model_chain() -> list[str]:
 
 
 def _model_kwargs(model: str) -> dict:
-    """Reasoning models (gpt-oss) need a bigger token cap + low effort, otherwise the cap is eaten by
-    hidden reasoning and the spoken answer comes back empty / slow."""
+    """Configure token caps and reasoning effort for reasoning models."""
     if model.startswith("openai/gpt-oss"):
         return {"max_completion_tokens": config.REASONING_MAX_TOKENS,
                 "reasoning_effort": config.REASONING_EFFORT, "include_reasoning": False}
@@ -69,8 +68,7 @@ def _is_model_gone(e: Exception) -> bool:
 
 
 async def _create_stream(messages: list):
-    """Walk the model chain. Move to the next model on: rate limit, outage, not-found/decommissioned,
-    no access. Retry once on the occasional malformed tool call Llama models produce."""
+    """Walk model chain with fallback on errors and retry on tool call failure."""
     last_err: Exception | None = None
     for model in await _model_chain():
         for attempt in range(2):

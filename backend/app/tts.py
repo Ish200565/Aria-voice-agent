@@ -1,6 +1,4 @@
-"""Free neural TTS via edge-tts (no API key, no quota). Cached so repeated lines are instant.
-If it fails (e.g. blocked on the host), the endpoint returns 503 and the browser falls back
-to speechSynthesis."""
+"""Text-to-speech synthesis using edge-tts with in-memory caching."""
 import asyncio
 import re
 from collections import OrderedDict

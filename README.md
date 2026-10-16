@@ -103,17 +103,27 @@ python tests/scenarios.py --base http://localhost:8000      # end-to-end guardra
 ## Design questions
 
 ### 1. Why this architecture and stack?
-I chose a modular pipeline (speech to text, LLM with tools, text to speech) because every stage had a usable free option and I could control and explain each one. A speech-to-speech API would be lower latency, but free-tier quotas are shared and model availability changes, which is risky for a public demo. Python and FastAPI are where I'm strongest, SSE gives streaming without extra infrastructure, and a static frontend never goes to sleep even when the free backend does. Policy decisions live in code rather than only in the prompt, so guardrails are deterministic.
+I went with a modular pipeline (browser STT -> FastAPI backend with Groq -> edge-tts) because each piece has a reliable free tier and can be tested and tuned independently. An all-in-one speech-to-speech API would be lower latency, but free quotas are tight and model availability fluctuates too much for an open demo. FastAPI with Server-Sent Events makes streaming straightforward without needing websocket servers, and keeping the frontend static means the page loads immediately even if the free backend takes a few seconds to wake up. Most importantly, policy rules live in Python code rather than prompt instructions alone, ensuring return windows and cancellation rules are enforced consistently.
 
 ### 2. What was the hardest part, and how did I solve it?
-Making it **feel** conversational on free infrastructure. Early versions had long, descriptive answers, a "one moment" filler before every reply, 3-second gaps between sentences, and text that ran ahead of the voice. I fixed this by (a) rewriting the prompt with short-answer examples and an answer style, (b) removing the filler because the tool lookup is instant, (c) sending the first sentence to TTS immediately and batching the rest into one call, and (d) revealing each line of text only when Aria starts speaking it. The second hard part was guardrails: in testing she invented a product range, a website and an "initiate return" action. I closed those gaps with explicit "you know nothing beyond these facts" rules and an "only offer what you can do" rule, then built `scenarios.py` so these checks run automatically.
+Getting the conversation to feel snappy on free hosting. Early tests had noticeable delays: answers were too long, filler phrases added unnecessary latency, and the UI showed whole sentences before the audio even started. I smoothed this out by:
+1. Shortening prompt instructions to strictly give 1-2 sentence spoken answers.
+2. Dropping filler phrases since mock tool lookups are practically instantaneous.
+3. Streaming TTS by sending the first sentence right away and batching the rest, while revealing transcript lines in sync with speech playback.
+
+The other tricky part was preventing the model from overpromising. During edge testing, it occasionally tried to approve returns or make up store locations. Putting all return and cancellation math inside Python functions with explicit decline reasons kept the agent grounded.
 
 ### 3. With one more week, what would I improve first?
-Latency and turn-taking. I would replace the per-sentence HTTP TTS and browser speech recognition with streaming speech over WebSockets (or a framework like LiveKit or Pipecat) using voice-activity detection, which allows true barge-in and removes the silence-timeout wait. Second, a larger automated evaluation set (accents, noisy audio, adversarial prompts) that runs on every change, because prompt changes are the riskiest edits in a system like this.
+Latency and natural interruption. The browser speech recognition and HTTP-based TTS create a slight delay between turns. I'd migrate to WebSockets with server-side voice activity detection (VAD) so users can interrupt naturally mid-sentence without clicking a button or waiting out silence gaps. I'd also expand automated test scenarios to test against heavy accents, background noise, and adversarial prompts to catch prompt regressions automatically.
 
 ### 4. What would change at 1,000 conversations a day?
-- **Reliability and cost:** move off free tiers to paid, rate-limit-safe LLM and TTS plans with retries and a queue, and track cost and latency per call.
-- **State:** replace in-memory sessions with Redis or Postgres so deploys and restarts don't drop calls, and store transcripts and outcomes for analytics.
-- **Real systems:** replace the mock order data with authenticated calls to the order system, verify the caller's identity before sharing order details, and handle PII (retention, redaction).
-- **Operations:** structured logging, tracing, dashboards for latency, tool failures and escalations; load tests; always-on hosting instead of a sleeping server.
-- **Quality:** regression evals on every prompt or model change, monitoring for hallucinations and policy violations, a proper human hand-off (ticket plus warm transfer), and real telephony with noise-robust speech recognition for Indian accents and Hinglish.
+At that volume, the prototype's in-memory shortcuts wouldn't hold up. I'd make four key changes:
+
+First, move session state out of RAM and into Redis or Postgres. Right now any server restart drops active calls. A persistent store also lets us log full transcripts and outcomes for analytics and QA.
+
+Second, switch to paid, production-grade LLM and TTS endpoints with reserved concurrency, automated retries, and rate-limit headroom. The backend would move to always-on instances behind a load balancer, with latency and cost tracked per call.
+
+Third, connect to real order systems with proper security. That means authenticating against real OMS/CRM APIs, verifying the customer's phone number or OTP before sharing order details, and scrubbing sensitive data (PII) from logs and transcripts.
+
+Finally, replace the browser setup with real telephony. Users would dial in over standard phone lines (using SIP/PSTN through Twilio or LiveKit), backed by server-side voice activity detection for hands-free barge-in, plus continuous evaluation suites to catch prompt regressions before pushing updates.
+
