@@ -12,6 +12,7 @@ from .data import MOCK_ORDERS
 from .llm import run_turn
 from .prompts import GREETING, LIMIT_REACHED
 from .sessions import store
+from .summary import build_summary
 
 app = FastAPI(title="Aria Voice Agent API")
 app.add_middleware(CORSMiddleware, allow_origins=config.ALLOWED_ORIGINS,
@@ -91,3 +92,15 @@ async def tts_endpoint(request: Request, text: str, voice: str | None = None):
         print(f"[tts] failed: {type(e).__name__}: {e}")
         raise HTTPException(503, "TTS unavailable")  # client falls back to browser speechSynthesis
     return Response(audio, media_type="audio/mpeg", headers={"Cache-Control": "public, max-age=3600"})
+
+
+class SummaryIn(BaseModel):
+    session_id: str
+
+@app.post("/api/summary")
+async def summary(body: SummaryIn, request: Request):
+    rate_limit(request, "summary", limit=10, window=600)
+    session = store.get(body.session_id)
+    if not session:
+        raise HTTPException(404, "Unknown or expired session")
+    return {"outcome": await build_summary(session), "transcript": session.transcript}
