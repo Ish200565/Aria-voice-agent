@@ -77,7 +77,7 @@ async def _create_stream(messages: list):
             try:
                 return await client().chat.completions.create(
                     model=model, messages=messages, tools=TOOL_SCHEMAS, tool_choice="auto",
-                    temperature=0.4, stream=True, **_model_kwargs(model),
+                    temperature=0.2, stream=True, **_model_kwargs(model),
                 )
             except groq.AuthenticationError as e:
                 raise LLMUnavailable("Invalid or missing GROQ_API_KEY - check your .env") from e

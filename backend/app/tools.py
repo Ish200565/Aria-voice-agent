@@ -61,6 +61,7 @@ def get_order_details(orders: dict, order_id=None) -> dict:
         "tracking_id": order["tracking_id"],
         "note": order["note"],
         "can_cancel": status == "Processing",
+        "reply_hint": "Answer in one short sentence: status, courier, expected time. Do not read the product, price or tracking ID unless the customer asks.",
         "can_refuse_at_doorstep": status in ("Shipped", "Out for Delivery"),
     }
     if order["hours_since_delivery"] is not None:

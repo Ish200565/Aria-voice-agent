@@ -7,6 +7,7 @@ _MD = re.compile(r"[*_`#>~]+")
 
 
 def clean_for_speech(text: str) -> str:
+    text = text.replace("\u2011", "-").replace("\u2010", "-")
     text = _MD.sub("", text)
     text = re.sub(r"^\s*[-•]\s+", "", text, flags=re.M)
     return re.sub(r"\s+", " ", text).strip()
