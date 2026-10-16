@@ -86,7 +86,7 @@ def test_history_trim_never_orphans_tool_messages():
     assert h[0]["role"] == "user" and len(h) <= 16
 
 
-# ---- model fallback (the bug you hit: 404 model_not_found must fall through, not crash) ----
+# ---- model fallback tests ----
 import httpx
 import groq
 import pytest
