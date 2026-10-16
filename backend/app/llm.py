@@ -54,6 +54,15 @@ async def _model_chain() -> list[str]:
     return chain or [m for m in wanted if m not in _dead]
 
 
+def _model_kwargs(model: str) -> dict:
+    """Reasoning models (gpt-oss) need a bigger token cap + low effort, otherwise the cap is eaten by
+    hidden reasoning and the spoken answer comes back empty / slow."""
+    if model.startswith("openai/gpt-oss"):
+        return {"max_completion_tokens": config.REASONING_MAX_TOKENS,
+                "reasoning_effort": config.REASONING_EFFORT, "include_reasoning": False}
+    return {"max_tokens": config.MAX_TOKENS}
+
+
 def _is_model_gone(e: Exception) -> bool:
     msg = str(e).lower()
     return "model_not_found" in msg or "decommission" in msg or "does not exist" in msg
@@ -68,7 +77,7 @@ async def _create_stream(messages: list):
             try:
                 return await client().chat.completions.create(
                     model=model, messages=messages, tools=TOOL_SCHEMAS, tool_choice="auto",
-                    temperature=0.4, max_tokens=config.MAX_TOKENS, stream=True,
+                    temperature=0.4, stream=True, **_model_kwargs(model),
                 )
             except groq.AuthenticationError as e:
                 raise LLMUnavailable("Invalid or missing GROQ_API_KEY - check your .env") from e
@@ -119,11 +128,12 @@ async def run_turn(session: Session, user_text: str) -> AsyncIterator[dict]:
             stream = await _create_stream(messages)
             llm_calls += 1
             splitter = SentenceSplitter()
-            text, calls = "", {}
+            text, calls, finish = "", {}, None
 
             async for chunk in stream:
                 if not chunk.choices:
                     continue
+                finish = getattr(chunk.choices[0], "finish_reason", None) or finish
                 delta = chunk.choices[0].delta
                 if delta.content:
                     text += delta.content
@@ -142,6 +152,8 @@ async def run_turn(session: Session, user_text: str) -> AsyncIterator[dict]:
                         if tc.function.arguments:
                             c["args"] += tc.function.arguments
 
+            if finish == "length":
+                print("[llm] WARNING: reply cut off by the token limit - raise REASONING_MAX_TOKENS")
             rest = splitter.flush()
             if rest:
                 if ttfs_ms is None:

@@ -4,8 +4,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-PRIMARY_MODEL = os.getenv("PRIMARY_MODEL", "llama-3.3-70b-versatile")
-FALLBACK_MODEL = os.getenv("FALLBACK_MODEL", "llama-3.1-8b-instant")
+PRIMARY_MODEL = os.getenv("PRIMARY_MODEL", "openai/gpt-oss-120b")
+FALLBACK_MODEL = os.getenv("FALLBACK_MODEL", "openai/gpt-oss-20b")
 # Tried (in order) after PRIMARY/FALLBACK if those are missing on your Groq account.
 EXTRA_MODELS = [m.strip() for m in os.getenv(
     "EXTRA_MODELS",
@@ -22,4 +22,8 @@ MAX_TURNS = int(os.getenv("MAX_TURNS", "20"))
 MAX_CALL_SECONDS = int(os.getenv("MAX_CALL_SECONDS", "300"))
 MAX_HISTORY_MESSAGES = int(os.getenv("MAX_HISTORY_MESSAGES", "16"))
 MAX_TOKENS = int(os.getenv("MAX_TOKENS", "150"))
+# gpt-oss models are reasoning models: reasoning tokens count against the completion cap, so give
+# them headroom (the prompt still forces 1-2 spoken sentences) and keep reasoning effort low for speed.
+REASONING_MAX_TOKENS = int(os.getenv("REASONING_MAX_TOKENS", "1000"))
+REASONING_EFFORT = os.getenv("REASONING_EFFORT", "low")
 MAX_TOOL_HOPS = 3
