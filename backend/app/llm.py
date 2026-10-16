@@ -102,6 +102,17 @@ async def _create_stream(messages: list):
     raise LLMUnavailable(f"{last_err}.{hint}")
 
 
+def _is_duplicate(s: str, spoken: list[str]) -> bool:
+    norm = re.sub(r"[^\w\s]", "", s.lower()).strip()
+    if not norm:
+        return True
+    for prev in spoken:
+        p_norm = re.sub(r"[^\w\s]", "", prev.lower()).strip()
+        if norm == p_norm or (len(norm) > 15 and (norm in p_norm or p_norm in norm)):
+            return True
+    return False
+
+
 async def run_turn(session: Session, user_text: str) -> AsyncIterator[dict]:
     user_text = user_text.strip()
 
@@ -133,13 +144,6 @@ async def run_turn(session: Session, user_text: str) -> AsyncIterator[dict]:
                     continue
                 finish = getattr(chunk.choices[0], "finish_reason", None) or finish
                 delta = chunk.choices[0].delta
-                if delta.content:
-                    text += delta.content
-                    for s in splitter.feed(delta.content):
-                        if ttfs_ms is None:
-                            ttfs_ms = int((time.perf_counter() - t0) * 1000)
-                        spoken.append(s)
-                        yield {"type": "sentence", "text": s}
                 for tc in delta.tool_calls or []:
                     c = calls.setdefault(tc.index, {"id": "", "name": "", "args": ""})
                     if tc.id:
@@ -149,15 +153,25 @@ async def run_turn(session: Session, user_text: str) -> AsyncIterator[dict]:
                             c["name"] = tc.function.name
                         if tc.function.arguments:
                             c["args"] += tc.function.arguments
+                if delta.content:
+                    text += delta.content
+                    if not calls:
+                        for s in splitter.feed(delta.content):
+                            if not _is_duplicate(s, spoken):
+                                if ttfs_ms is None:
+                                    ttfs_ms = int((time.perf_counter() - t0) * 1000)
+                                spoken.append(s)
+                                yield {"type": "sentence", "text": s}
 
             if finish == "length":
                 print("[llm] WARNING: reply cut off by the token limit - raise REASONING_MAX_TOKENS")
-            rest = splitter.flush()
-            if rest:
-                if ttfs_ms is None:
-                    ttfs_ms = int((time.perf_counter() - t0) * 1000)
-                spoken.append(rest)
-                yield {"type": "sentence", "text": rest}
+            if not calls:
+                rest = splitter.flush()
+                if rest and not _is_duplicate(rest, spoken):
+                    if ttfs_ms is None:
+                        ttfs_ms = int((time.perf_counter() - t0) * 1000)
+                    spoken.append(rest)
+                    yield {"type": "sentence", "text": rest}
 
             if not calls:
                 if text.strip():

@@ -1,7 +1,7 @@
 """Sentence splitter for streaming LLM tokens -> speakable chunks."""
 import re
 
-_END = re.compile(r'([.!?]+["\')\]]*)(\s+)')
+_END = re.compile(r'([.!?]+["\')\]]*)(?:\s+|(?=[A-Z\u0900-\u097F]))')
 _SOFT = re.compile(r"[,;:]\s")
 _MD = re.compile(r"[*_`#>~]+")
 
